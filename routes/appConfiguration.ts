@@ -12,6 +12,12 @@ export function retrieveAppConfiguration () {
     if (safeConfig.application?.chatBot) {
       delete safeConfig.application.chatBot.llmApiUrl
     }
+    if (safeConfig.application?.googleOauth) {
+      delete safeConfig.application.googleOauth
+    }
+    delete safeConfig.server
+    delete safeConfig.products
+    delete safeConfig.memories
     res.json({ config: safeConfig })
   }
 }
