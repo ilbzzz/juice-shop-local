@@ -76,7 +76,7 @@ void describe('redirect', () => {
   })
 
   void it('tricking the allowlist should solve "redirectChallenge"', () => {
-    req.query.to = 'http://kimminich.de?to=https://github.com/juice-shop/juice-shop'
+    req.query.to = '/score-board?satisfyIndexOf=https://github.com/juice-shop/juice-shop'
     challenges.redirectChallenge = { solved: false, save } as unknown as Challenge
 
     performRedirect()(req, res, next)

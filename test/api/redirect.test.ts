@@ -67,26 +67,20 @@ void describe('/redirect', () => {
     assert.equal(res.status, 302)
   })
 
-  void it('GET error message with information leakage when calling /redirect without query parameter', async () => {
+  void it('GET error message when calling /redirect without query parameter', async () => {
     const res = await request(app)
       .get('/redirect')
-    assert.equal(res.status, 500)
+    assert.equal(res.status, 406)
     assert.ok(res.headers['content-type']?.includes('text/html'))
-    assert.ok(res.text.includes(`<h1>${config.get<string>('application.name')} (Express`))
-    assert.ok(res.text.includes('TypeError'))
-    assert.ok(res.text.includes('of undefined'))
-    assert.ok(res.text.includes('&#39;includes&#39;'))
+    assert.ok(res.text.includes('Unrecognized target URL for redirect: undefined'))
   })
 
-  void it('GET error message with information leakage when calling /redirect with unrecognized query parameter', async () => {
+  void it('GET error message when calling /redirect with unrecognized query parameter', async () => {
     const res = await request(app)
       .get('/redirect?x=y')
-    assert.equal(res.status, 500)
+    assert.equal(res.status, 406)
     assert.ok(res.headers['content-type']?.includes('text/html'))
-    assert.ok(res.text.includes(`<h1>${config.get<string>('application.name')} (Express`))
-    assert.ok(res.text.includes('TypeError'))
-    assert.ok(res.text.includes('of undefined'))
-    assert.ok(res.text.includes('&#39;includes&#39;'))
+    assert.ok(res.text.includes('Unrecognized target URL for redirect: undefined'))
   })
 
   void it('GET error message hinting at allowlist validation when calling /redirect with an unrecognized "to" target', async () => {
