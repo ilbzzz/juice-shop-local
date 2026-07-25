@@ -8,9 +8,15 @@ import { type Request, type Response } from 'express'
 
 export function retrieveAppConfiguration () {
   return (_req: Request, res: Response) => {
-    const safeConfig = structuredClone(config.util.toObject(config))
+    const configObject = config.util.toObject(config)
+    const safeConfig = {
+      application: structuredClone(configObject.application)
+    }
     if (safeConfig.application?.chatBot) {
-      delete safeConfig.application.chatBot.llmApiUrl
+      delete (safeConfig.application.chatBot as any).llmApiUrl
+    }
+    if (safeConfig.application?.googleOauth) {
+      delete (safeConfig.application as any).googleOauth
     }
     res.json({ config: safeConfig })
   }
