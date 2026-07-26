@@ -8,9 +8,20 @@ import { type Request, type Response } from 'express'
 
 export function retrieveAppConfiguration () {
   return (_req: Request, res: Response) => {
-    const safeConfig = structuredClone(config.util.toObject(config))
+    const configObject = config.util.toObject(config)
+    const safeConfig: any = {}
+    const allowedKeys = ['application', 'challenges', 'hackingInstructor', 'ctf']
+    for (const key of allowedKeys) {
+      if (configObject[key] !== undefined) {
+        safeConfig[key] = structuredClone(configObject[key])
+      }
+    }
+
     if (safeConfig.application?.chatBot) {
       delete safeConfig.application.chatBot.llmApiUrl
+    }
+    if (safeConfig.application?.googleOauth) {
+      delete safeConfig.application.googleOauth
     }
     res.json({ config: safeConfig })
   }
