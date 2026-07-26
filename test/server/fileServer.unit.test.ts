@@ -88,8 +88,9 @@ void describe('fileServer', () => {
 
     servePublicFiles()(req, res, next)
 
-    assert.equal(res.sendFile.mock.calls.length, 1)
-    assert.match(res.sendFile.mock.calls[0].arguments[0], /ftp[/\\]eastere\.gg/)
+    assert.equal(res.sendFile.mock.calls.length, 0)
+    assert.equal(next.mock.calls.length, 1)
+    assert.ok(next.mock.calls[0].arguments[0] instanceof Error)
     assert.equal(challenges.easterEggLevelOneChallenge.solved, true)
   })
 
@@ -99,8 +100,9 @@ void describe('fileServer', () => {
 
     servePublicFiles()(req, res, next)
 
-    assert.equal(res.sendFile.mock.calls.length, 1)
-    assert.match(res.sendFile.mock.calls[0].arguments[0], /ftp[/\\]package\.json\.bak/)
+    assert.equal(res.sendFile.mock.calls.length, 0)
+    assert.equal(next.mock.calls.length, 1)
+    assert.ok(next.mock.calls[0].arguments[0] instanceof Error)
     assert.equal(challenges.forgottenDevBackupChallenge.solved, true)
   })
 
@@ -110,8 +112,9 @@ void describe('fileServer', () => {
 
     servePublicFiles()(req, res, next)
 
-    assert.equal(res.sendFile.mock.calls.length, 1)
-    assert.match(res.sendFile.mock.calls[0].arguments[0], /ftp[/\\]coupons_2013\.md\.bak/)
+    assert.equal(res.sendFile.mock.calls.length, 0)
+    assert.equal(next.mock.calls.length, 1)
+    assert.ok(next.mock.calls[0].arguments[0] instanceof Error)
     assert.equal(challenges.forgottenBackupChallenge.solved, true)
   })
 
@@ -121,8 +124,9 @@ void describe('fileServer', () => {
 
     servePublicFiles()(req, res, next)
 
-    assert.equal(res.sendFile.mock.calls.length, 1)
-    assert.match(res.sendFile.mock.calls[0].arguments[0], /ftp[/\\]suspicious_errors\.yml/)
+    assert.equal(res.sendFile.mock.calls.length, 0)
+    assert.equal(next.mock.calls.length, 1)
+    assert.ok(next.mock.calls[0].arguments[0] instanceof Error)
     assert.equal(challenges.misplacedSignatureFileChallenge.solved, true)
   })
 })
