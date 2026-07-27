@@ -21,6 +21,20 @@ export function updateUserProfile () {
       return
     }
 
+    if (!utils.jwtFrom(req)) {
+      const host = req.get('host')
+      const origin = req.get('origin')
+      const referer = req.get('referer')
+      const challengeUrl = config.get<string>('challenges.overwriteUrlForCsrfChallenge').replace(/^https?:\/\//, '')
+      const isSameOrigin = !!(host && ((origin && origin.includes(host)) || (referer && referer.includes(host))))
+      const isChallengeOrigin = !!((origin && origin.includes(challengeUrl)) || (referer && referer.includes(challengeUrl)))
+
+      if (!isSameOrigin && !isChallengeOrigin) {
+        next(new Error('Blocked illegal activity by ' + req.socket.remoteAddress))
+        return
+      }
+    }
+
     try {
       const user = await UserModel.findByPk(loggedInUser.data.id)
       if (!user) {
