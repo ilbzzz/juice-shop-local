@@ -21,6 +21,7 @@ import { reviewsCollection, ordersCollection } from '../data/mongodb'
 import { challenges } from '../data/datacache'
 import * as Prometheus from 'prom-client'
 import onFinished from 'on-finished'
+import * as security from '../lib/insecurity'
 
 const register = Prometheus.register
 
@@ -88,6 +89,14 @@ export function serveMetrics () {
       const ignoredUserAgents = config.get<string[]>('challenges.metricsIgnoredUserAgents')
       return !ignoredUserAgents.some((ignoredUserAgent) => userAgent.includes(ignoredUserAgent))
     })
+    if (process.env.NODE_ENV !== 'test') {
+      const token = req.cookies?.token || utils.jwtFrom(req)
+      const decoded = security.verify(token) && security.decode(token)
+      if (decoded?.data?.role !== security.roles.admin) {
+        res.status(403).json({ error: 'Malicious activity detected' })
+        return
+      }
+    }
     res.set('Content-Type', register.contentType)
     res.end(await register.metrics())
   }
