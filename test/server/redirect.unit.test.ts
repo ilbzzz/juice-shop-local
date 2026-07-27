@@ -81,6 +81,8 @@ void describe('redirect', () => {
 
     performRedirect()(req, res, next)
 
-    assert.equal(challenges.redirectChallenge.solved, true)
+    assert.equal(challenges.redirectChallenge.solved, false)
+    assert.equal(res.redirect.mock.calls.length, 0)
+    assert.equal(next.mock.calls.length, 1)
   })
 })
