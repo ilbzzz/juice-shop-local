@@ -19,8 +19,9 @@ export function retrieveLoggedInUser () {
 
         // Parse the fields parameter into an array, splitting by comma.
         // If not provided, both these variables will be undefined.
+        const allowedFields = ['id', 'email', 'lastLoginIp', 'profileImage']
         const fieldsParam = req.query?.fields as string | undefined
-        const requestedFields = fieldsParam ? fieldsParam.split(',').map(f => f.trim()) : []
+        const requestedFields = fieldsParam ? fieldsParam.split(',').map(f => f.trim()).filter(f => allowedFields.includes(f)) : []
 
         let baseUser: any = {}
 
@@ -51,11 +52,9 @@ export function retrieveLoggedInUser () {
     // Solve passwordHashLeakChallenge when password field is included in response
     challengeUtils.solveIf(challenges.passwordHashLeakChallenge, () => response?.user?.password)
 
-    if (req.query.callback === undefined) {
-      res.json(response)
-    } else {
+    if (req.query.callback !== undefined) {
       challengeUtils.solveIf(challenges.emailLeakChallenge, () => { return true })
-      res.jsonp(response)
     }
+    res.json(response)
   }
 }
