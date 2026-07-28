@@ -14,11 +14,19 @@ import config from 'config'
 
 export function updateUserProfile () {
   return async (req: Request, res: Response, next: NextFunction) => {
-    const loggedInUser = security.authenticatedUsers.get(req.cookies.token)
+    const token = req.headers.authorization?.replace('Bearer ', '') ?? req.cookies.token
+    const loggedInUser = security.authenticatedUsers.get(token)
 
     if (!loggedInUser) {
       next(new Error('Blocked illegal activity by ' + req.socket.remoteAddress))
       return
+    }
+
+    if (!req.headers.authorization) {
+      if (req.body.csrfToken !== security.hash(req.cookies.token)) {
+        next(new Error('Blocked illegal activity by ' + req.socket.remoteAddress))
+        return
+      }
     }
 
     try {

@@ -82,6 +82,9 @@ export function getUserProfile () {
     template = template.replace(/_primDark_/g, theme.primDark)
     template = template.replace(/_logo_/g, utils.extractFilename(config.get('application.logo')))
 
+    const csrfToken = security.hash(req.cookies.token)
+    template = template.replace(/form\(action='.\/profile', method='post'/g, 'form(action=\'./profile\', method=\'post\'\n                   input(type=\'hidden\', name=\'csrfToken\', value=\'' + csrfToken + '\')')
+
     try {
       const pug = (await import('pug')).default
       const fn = pug.compile(template)
