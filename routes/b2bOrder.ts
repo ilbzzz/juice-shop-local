@@ -17,6 +17,10 @@ export function b2bOrder () {
   return ({ body }: Request, res: Response, next: NextFunction) => {
     if (utils.isChallengeEnabled(challenges.rceChallenge) || utils.isChallengeEnabled(challenges.rceOccupyChallenge)) {
       const orderLinesData = body.orderLinesData || ''
+      if (typeof orderLinesData === 'string' && (orderLinesData.toLowerCase().includes('constructor') || orderLinesData.toLowerCase().includes('process') || orderLinesData.toLowerCase().includes('require') || orderLinesData.toLowerCase().includes('__proto__') || orderLinesData.toLowerCase().includes('prototype'))) {
+        next(new Error('Malicious activity detected'))
+        return
+      }
       try {
         const sandbox = { safeEval, orderLinesData }
         vm.createContext(sandbox)
