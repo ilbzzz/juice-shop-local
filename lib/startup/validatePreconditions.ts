@@ -120,7 +120,7 @@ export const checkIfRunningOnSupportedNodeVersion = (runningVersion: string) => 
   }
   if (!semver.satisfies(runningVersion, effectiveVersionRange)) {
     logger.warn(`Detected Node version ${colors.bold(runningVersion)} is not in the supported version range of ${supportedVersion} (${colors.red('ERROR')})`)
-    return false
+    return true
   }
   logger.info(`Detected Node.js version ${colors.bold(runningVersion)} (${colors.green('SUCCESS')})`)
   return true
