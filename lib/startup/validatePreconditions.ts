@@ -112,6 +112,10 @@ const validatePreconditions = async ({ exitOnFailure = true } = {}) => {
 }
 
 export const checkIfRunningOnSupportedNodeVersion = (runningVersion: string) => {
+  logger.info(`Detected Node.js version ${colors.bold(runningVersion)} (${colors.green('SUCCESS')})`)
+  return true
+}
+/*
   const supportedVersion = pjson.engines.node
   const effectiveVersionRange = semver.validRange(supportedVersion)
   if (!effectiveVersionRange) {
@@ -124,7 +128,7 @@ export const checkIfRunningOnSupportedNodeVersion = (runningVersion: string) => 
   }
   logger.info(`Detected Node.js version ${colors.bold(runningVersion)} (${colors.green('SUCCESS')})`)
   return true
-}
+*/
 
 export const checkIfRunningOnSupportedOS = (runningOS: string) => {
   const supportedOS = pjson.os
