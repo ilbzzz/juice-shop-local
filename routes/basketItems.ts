@@ -42,6 +42,10 @@ export function addBasketItem () {
         BasketId: basketIds[basketIds.length - 1],
         quantity: quantities[quantities.length - 1]
       }
+      if (basketItem.quantity < 1) {
+        res.status(400).json({ error: res.__('Quantity must be at least 1.') })
+        return
+      }
       challengeUtils.solveIf(challenges.basketManipulateChallenge, () => { return user && basketItem.BasketId && basketItem.BasketId !== 'undefined' && user.bid != basketItem.BasketId }) // eslint-disable-line eqeqeq
 
       const basketItemInstance = BasketItemModel.build(basketItem)
@@ -83,6 +87,10 @@ export function quantityCheckBeforeBasketItemUpdate () {
 }
 
 async function quantityCheck (req: Request, res: Response, next: NextFunction, id: number, quantity: number) {
+  if (quantity < 1) {
+    res.status(400).json({ error: res.__('Quantity must be at least 1.') })
+    return
+  }
   const product = await QuantityModel.findOne({ where: { ProductId: id } })
   if (product == null) {
     throw new Error('No such product found!')
