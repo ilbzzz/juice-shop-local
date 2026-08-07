@@ -178,9 +178,9 @@ function configureApp (app: ReturnType<typeof express>, seq: typeof sequelize) {
   /* Compression for all requests */
   app.use(compression())
 
-  /* Bludgeon solution for possible CORS problems: Allow everything! */
-  app.options('*', cors())
-  app.use(cors())
+  /* Restrict CORS to the application's own origin */
+  app.options('*', cors({ origin: config.get('server.baseUrl'), credentials: true }))
+  app.use(cors({ origin: config.get('server.baseUrl'), credentials: true }))
 
   /* Security middleware */
   app.use(helmet.noSniff())
