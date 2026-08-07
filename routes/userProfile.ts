@@ -21,6 +21,57 @@ function favicon () {
   return utils.extractFilename(config.get('application.favicon'))
 }
 
+function safeEvaluate (code: string): any {
+  code = code.trim()
+
+  const quotes = ['"', "'", '`']
+  for (const quote of quotes) {
+    if (code.startsWith(quote) && code.endsWith(quote) && code.length >= 2) {
+      const inner = code.slice(1, -1)
+      let escaped = false
+      let hasUnescapedQuote = false
+      for (let i = 0; i < inner.length; i++) {
+        const char = inner[i]
+        if (escaped) {
+          escaped = false
+        } else if (char === '\\') {
+          escaped = true
+        } else if (char === quote) {
+          hasUnescapedQuote = true
+          break
+        }
+      }
+      if (!hasUnescapedQuote && !escaped) {
+        let result = ''
+        let isEscaped = false
+        for (let i = 0; i < inner.length; i++) {
+          const char = inner[i]
+          if (isEscaped) {
+            result += char
+            isEscaped = false
+          } else if (char === '\\') {
+            isEscaped = true
+          } else {
+            result += char
+          }
+        }
+        return result
+      }
+    }
+  }
+
+  if (/^[0-9\s+\-*/%()]*$/.test(code)) {
+    try {
+      const fn = new Function(`return (${code})`) // eslint-disable-line no-new-func
+      return fn()
+    } catch {
+      throw new Error('Invalid math expression')
+    }
+  }
+
+  throw new Error('Unsupported or unsafe expression')
+}
+
 export function getUserProfile () {
   return async (req: Request, res: Response, next: NextFunction) => {
     let template: string
@@ -58,12 +109,12 @@ export function getUserProfile () {
         if (!code) {
           throw new Error('Username is null')
         }
-        username = eval(code) // eslint-disable-line no-eval
+        username = safeEvaluate(code)
       } catch (err) {
-        username = '\\' + username
+        username = '\\\\' + username
       }
     } else {
-      username = '\\' + username
+      username = '\\\\' + username
     }
 
     const themeKey = config.get<string>('application.theme') as keyof typeof themes
