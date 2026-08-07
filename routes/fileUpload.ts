@@ -73,10 +73,16 @@ async function handleXmlUpload ({ file }: Request, res: Response, next: NextFunc
     if (((file?.buffer) != null) && utils.isChallengeEnabled(challenges.deprecatedInterfaceChallenge)) { // XXE attacks in Docker/Heroku containers regularly cause "segfault" crashes
       const data = file.buffer.toString()
       try {
+        if (/<!ENTITY[^>]*\b(SYSTEM|PUBLIC)\b/i.test(data) || /<!DOCTYPE[^>]*\b(SYSTEM|PUBLIC)\b/i.test(data)) {
+          res.status(410)
+          next(new Error('B2B customer complaints via file upload have been deprecated for security reasons: XML contains forbidden external entity or DTD declarations (' + file.originalname + ')'))
+          return
+        }
         const xmlString = await parseXmlString(data)
         challengeUtils.solveIf(challenges.xxeFileDisclosureChallenge, () => { return (utils.matchesEtcPasswdFile(xmlString) || utils.matchesSystemIniFile(xmlString)) })
         res.status(410)
         next(new Error('B2B customer complaints via file upload have been deprecated for security reasons: ' + utils.trunc(xmlString, 400) + ' (' + file.originalname + ')'))
+        return
       } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : String(err)
         if (utils.contains(errorMessage, 'Script execution timed out')) {
@@ -85,14 +91,17 @@ async function handleXmlUpload ({ file }: Request, res: Response, next: NextFunc
           }
           res.status(503)
           next(new Error('Sorry, we are temporarily not available! Please try again later.'))
+          return
         } else {
           res.status(410)
           next(new Error('B2B customer complaints via file upload have been deprecated for security reasons: ' + errorMessage + ' (' + file.originalname + ')'))
+          return
         }
       }
     } else {
       res.status(410)
       next(new Error('B2B customer complaints via file upload have been deprecated for security reasons (' + file?.originalname + ')'))
+      return
     }
   }
   next()
