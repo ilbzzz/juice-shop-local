@@ -18,6 +18,52 @@ export function b2bOrder () {
     if (utils.isChallengeEnabled(challenges.rceChallenge) || utils.isChallengeEnabled(challenges.rceOccupyChallenge)) {
       const orderLinesData = body.orderLinesData || ''
       try {
+        let isJson = false
+        try {
+          JSON.parse(orderLinesData)
+          isJson = true
+        } catch (e) {}
+
+        if (isJson) {
+          res.json({ cid: body.cid, orderNo: uniqueOrderNumber(), paymentDue: dateTwoWeeksFromNow() })
+          return
+        }
+
+        const forbiddenKeywordsInsensitive = [
+          'constructor',
+          'prototype',
+          '__proto__',
+          'process',
+          'require',
+          'child_process',
+          'exec',
+          'spawn',
+          'prepareStackTrace',
+          'getThis',
+          'getPrototypeOf',
+          'defineProperty',
+          'defineProperties',
+          'getOwnProperty',
+          'global',
+          'eval',
+          'Reflect'
+        ]
+        const forbiddenKeywordsSensitive = [
+          'Function',
+          'Object'
+        ]
+
+        const lowerCaseCode = orderLinesData.toLowerCase()
+        const hasForbiddenKeyword = 
+          forbiddenKeywordsInsensitive.some(keyword => lowerCaseCode.includes(keyword.toLowerCase())) ||
+          forbiddenKeywordsSensitive.some(keyword => orderLinesData.includes(keyword))
+
+        const hasBracketPropertyAccess = /[\w\)\x60'"\]]\s*\[/.test(orderLinesData)
+
+        if (hasForbiddenKeyword || hasBracketPropertyAccess) {
+          throw new Error('Blocked unsafe execution payload')
+        }
+
         const sandbox = { safeEval, orderLinesData }
         vm.createContext(sandbox)
         vm.runInContext('safeEval(orderLinesData)', sandbox, { timeout: 2000 })
