@@ -49,7 +49,7 @@ export const preconditionsReady = new Promise<void>((resolve) => {
   resolvePreconditionsReady = resolve
 })
 
-const validatePreconditions = async ({ exitOnFailure = true } = {}) => {
+const validatePreconditions = async ({ exitOnFailure = false } = {}) => {
   let success = true
   success = checkIfRunningOnSupportedNodeVersion(process.version) && success
   success = checkIfRunningOnSupportedOS(process.platform) && success

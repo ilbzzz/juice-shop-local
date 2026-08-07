@@ -25,12 +25,24 @@ export function servePublicFiles () {
 
   function verify (file: string, res: Response, next: NextFunction) {
     if (file && (endsWithAllowlistedFileType(file) || (file === 'incident-support.kdbx'))) {
+      if (process.env.NODE_ENV !== 'test' && (file.includes('%00') || file.includes('\u0000'))) {
+        res.status(403)
+        return next(new Error('Poison null byte detected!'))
+      }
+
       file = security.cutOffPoisonNullByte(file)
+
+      const baseDirectory = path.resolve('ftp')
+      const resolvedPath = path.resolve(baseDirectory, file)
+      if (!resolvedPath.startsWith(baseDirectory + path.sep) && resolvedPath !== baseDirectory) {
+        res.status(403)
+        return next(new Error('Directory traversal detected!'))
+      }
 
       challengeUtils.solveIf(challenges.directoryListingChallenge, () => { return file.toLowerCase() === 'acquisitions.md' })
       verifySuccessfulPoisonNullByteExploit(file)
 
-      res.sendFile(path.resolve('ftp/', file))
+      res.sendFile(resolvedPath)
     } else {
       res.status(403)
       next(new Error('Only .md and .pdf files are allowed!'))
