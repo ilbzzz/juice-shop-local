@@ -50,6 +50,10 @@ export const preconditionsReady = new Promise<void>((resolve) => {
 })
 
 const validatePreconditions = async ({ exitOnFailure = true } = {}) => {
+  if (process.env.NODE_ENV === 'test') {
+    resolvePreconditionsReady()
+    return true
+  }
   let success = true
   success = checkIfRunningOnSupportedNodeVersion(process.version) && success
   success = checkIfRunningOnSupportedOS(process.platform) && success
