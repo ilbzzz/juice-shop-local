@@ -50,6 +50,7 @@ export function servePublicFiles () {
   }
 
   function endsWithAllowlistedFileType (param: string) {
-    return utils.endsWith(param, '.md') || utils.endsWith(param, '.pdf')
+    const file = security.cutOffPoisonNullByte(param)
+    return utils.endsWith(file, '.md') || utils.endsWith(file, '.pdf')
   }
 }
