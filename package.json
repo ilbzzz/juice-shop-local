@@ -150,7 +150,7 @@
     "sequelize": "^6.37.3",
     "serve-index": "^1.9.1",
     "socket.io": "^3.1.2",
-    "sqlite3": "^5.1.7",
+    "sqlite3": "^5.1.6",
     "svg-captcha": "^1.4.0",
     "swagger-ui-express": "^5.0.1",
     "unzipper": "^0.12.3",
@@ -212,7 +212,7 @@
     "typescript-eslint": "^8.57.1"
   },
   "engines": {
-    "node": "22 - 26"
+    "node": "20 - 26"
   },
   "os": [
     "win32",
