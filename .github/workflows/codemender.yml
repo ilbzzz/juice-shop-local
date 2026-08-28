@@ -29,6 +29,7 @@ permissions:
   pull-requests: write
   security-events: write
   actions: read
+  packages: read
 
 jobs:
   remediate:
