@@ -22,6 +22,14 @@ on:
         default: 'npm install && npm test'
         type: string
 
+# Grant permissions required by the 3-stage pipeline
+permissions:
+  id-token: write
+  contents: write
+  pull-requests: write
+  security-events: write
+  actions: read
+
 jobs:
   remediate:
     # Only run on Schedule, Manual Trigger, or PRs with 'security-scan' label
