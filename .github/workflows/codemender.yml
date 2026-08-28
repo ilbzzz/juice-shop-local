@@ -19,7 +19,7 @@ on:
       build_command:
         description: 'Custom build & test command for verification'
         required: false
-        default: 'npm install  --prefer-offline && npm test'
+        default: 'npm install --prefer-offline && npm test'
         type: string
       fix_model:
         description: 'Dedicated model override for Stage 2 patch synthesis (cm fix)'
@@ -48,7 +48,7 @@ jobs:
     with:
       scan_target: ${{ inputs.scan_target || '.' }}
       # Passes the input from workflow_dispatch, or falls back to 'npm install && npm test' on schedule/push
-      build_command: ${{ inputs.build_command || 'npm install && npm test' }}
+      build_command: ${{ inputs.build_command || 'npm install --prefer-offline && npm test' }}
       max_tasks: ${{ github.event_name == 'pull_request' && 4 || 10 }}
       upload_sarif: true
     secrets:
