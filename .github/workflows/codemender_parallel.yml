@@ -79,8 +79,8 @@ on:
       github_app_private_key:
         description: 'GitHub App private key (PEM format)'
         required: false
-      github_token:
-        description: 'Optional GitHub Token/PAT'
+      custom_github_token:
+        description: 'Optional custom GitHub Personal Access Token (PAT)'
         required: false
 
 permissions:
@@ -150,7 +150,7 @@ jobs:
           CODEMENDER_MAX_TASKS: ${{ inputs.max_tasks }}
           CODEMENDER_MODEL: ${{ inputs.model }}
           CODEMENDER_FIND_MODEL: ${{ inputs.find_model }}
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token || secrets.github_token || secrets.GITHUB_TOKEN || github.token }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token || secrets.custom_github_token || secrets.GITHUB_TOKEN || github.token }}
           GITHUB_REPO_URL: ${{ github.server_url }}/${{ github.repository }}.git
           WORKSPACE_DIR: ${{ github.workspace }}
         run: /opt/codemender/venv/bin/python3 /opt/codemender/orchestrator.py
@@ -231,7 +231,7 @@ jobs:
           CODEMENDER_MODEL: ${{ inputs.model }}
           CODEMENDER_VERIFY_MODEL: ${{ inputs.verify_model }}
           CODEMENDER_FIX_MODEL: ${{ inputs.fix_model }}
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token || secrets.github_token || secrets.GITHUB_TOKEN || github.token }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token || secrets.custom_github_token || secrets.GITHUB_TOKEN || github.token }}
           GITHUB_REPO_URL: ${{ github.server_url }}/${{ github.repository }}.git
           WORKSPACE_DIR: ${{ github.workspace }}
         run: /opt/codemender/venv/bin/python3 /opt/codemender/orchestrator.py
@@ -311,7 +311,7 @@ jobs:
           CODEMENDER_TARGET_SHA: ${{ needs.scan.outputs.target_sha }}
           CODEMENDER_BUILD_COMMAND: ${{ inputs.build_command }}
           CODEMENDER_MAX_TASKS: ${{ inputs.max_tasks }}
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token || secrets.github_token || secrets.GITHUB_TOKEN || github.token }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token || secrets.custom_github_token || secrets.GITHUB_TOKEN || github.token }}
           GITHUB_REPO_URL: ${{ github.server_url }}/${{ github.repository }}.git
           WORKSPACE_DIR: ${{ github.workspace }}
         run: /opt/codemender/venv/bin/python3 /opt/codemender/orchestrator.py
