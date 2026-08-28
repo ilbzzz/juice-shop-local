@@ -21,6 +21,11 @@ on:
         required: false
         default: 'npm install && npm test'
         type: string
+      fix_model:
+        description: 'Dedicated model override for Stage 2 patch synthesis (cm fix)'
+        required: false
+        default: 'gemini-3.6-flash'
+        type: string
 
 # Grant permissions required by the 3-stage pipeline
 permissions:
@@ -37,7 +42,7 @@ jobs:
     if: >
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'security-scan'))
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'codemender-scan'))
     # uses: ilbzzz/codemender-agent/.github/workflows/codemender_parallel.yml@development
     uses: ./.github/workflows/codemender_parallel.yml
     with:
