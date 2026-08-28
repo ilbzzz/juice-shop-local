@@ -50,22 +50,21 @@ jobs:
       (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'codemender-scan'))
     # uses: ilbzzz/codemender-agent/.github/workflows/codemender_parallel.yml@development
     uses: ./.github/workflows/codemender_parallel.yml
-    
-    # Environment variables passed to CodeMender stages
-    env:
-      # Optional: set to 'true' to skip dynamic exploit verification in Stage 2
-      CODEMENDER_SKIP_EXPLOIT_VERIFICATION: ${{ inputs.skip_exploit_verification || 'true' }}
 
     with:
       scan_target: ${{ inputs.scan_target || '.' }}
       # Passes the input from workflow_dispatch, or falls back to 'npm install && npm test' on schedule/push
       build_command: ${{ inputs.build_command || 'npm install --prefer-offline && npm test' }}
+      # Optional: Skip dynamic exploit verification during Stage 2 (cm verify --skip-exploit-verification).
+      # Fallback Default (false): Generates & verifies PoC exploits dynamically before synthesis.
+      skip_exploit_verification: ${{ inputs.skip_exploit_verification || false }}
+
       max_tasks: ${{ github.event_name == 'pull_request' && 4 || 10 }}
       upload_sarif: true
       # =======================================================================
       # 6. AI MODEL CONFIGURATION (OPTIONAL)
       # =======================================================================
-      # ⚠️ Fallback Defaults: During automated PR and Nightly scans, inputs.* is null.
+      # Fallback Defaults: During automated PR and Nightly scans, inputs.* is null.
       # If you want a specific model used on PR scans, specify it as the fallback value after '||'.
       # Leave empty ('') to use CodeMender's up-to-date default Gemini models.
       # Consult documentation for latest supported models:
