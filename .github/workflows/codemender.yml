@@ -16,11 +16,11 @@ on:
         description: 'Maximum parallel worker tasks'
         required: false
         default: '10'
-      # build_command:
-      #   description: 'Custom build & test command for verification'
-      #   required: false
-      #   default: 'npm install && npm test'
-      #   type: string
+      build_command:
+        description: 'Custom build & test command for verification'
+        required: false
+        default: 'npm install && npm test'
+        type: string
 
 # Grant permissions required by the 3-stage pipeline
 permissions:
@@ -42,6 +42,8 @@ jobs:
     uses: ./.github/workflows/codemender_parallel.yml
     with:
       scan_target: ${{ inputs.scan_target || '.' }}
+      # Passes the input from workflow_dispatch, or falls back to 'npm install && npm test' on schedule/push
+      build_command: ${{ inputs.build_command || 'npm install && npm test' }}
       max_tasks: ${{ github.event_name == 'pull_request' && 4 || 10 }}
       upload_sarif: true
     secrets:
