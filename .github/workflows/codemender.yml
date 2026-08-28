@@ -51,6 +51,18 @@ jobs:
       build_command: ${{ inputs.build_command || 'npm install --prefer-offline && npm test' }}
       max_tasks: ${{ github.event_name == 'pull_request' && 4 || 10 }}
       upload_sarif: true
+      # =======================================================================
+      # 6. AI MODEL CONFIGURATION (OPTIONAL)
+      # =======================================================================
+      # ⚠️ Fallback Defaults: During automated PR and Nightly scans, inputs.* is null.
+      # If you want a specific model used on PR scans, specify it as the fallback value after '||'.
+      # Leave empty ('') to use CodeMender's up-to-date default Gemini models.
+      # Consult documentation for latest supported models:
+      # https://docs.cloud.google.com/gemini-enterprise-agent-platform/codemender#specifying-the-model
+      # model: ${{ inputs.model || '' }}               # Global model override across all stages
+      # find_model: ${{ inputs.find_model || '' }}     # Dedicated model for Stage 1 discovery (cm find)
+      # verify_model: ${{ inputs.verify_model || '' }} # Dedicated model for Stage 2 exploit verification (cm verify)
+      fix_model: ${{ inputs.fix_model || 'gemini-3.6-flash' }}       # Dedicated model for Stage 2 patch synthesis (cm fix, e.g. 'gemini-2.5-flash')
     secrets:
       gcp_workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
       gcp_service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
