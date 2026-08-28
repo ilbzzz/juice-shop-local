@@ -116,6 +116,15 @@ jobs:
       scan_id: ${{ steps.run-scan.outputs.scan_id }}
 
     steps:
+      - name: Configure Git Safe Directory
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: ${{ github.event_name == 'pull_request' && 0 || 1 }}
+
       - name: Mint GitHub App Token
         id: app-token
         if: env.GH_APP_ID != '' && env.GH_APP_KEY != ''
@@ -131,15 +140,6 @@ jobs:
           workload_identity_provider: ${{ secrets.gcp_workload_identity_provider }}
           service_account: ${{ secrets.gcp_service_account }}
           credentials_json: ${{ secrets.gcp_sa_key }}
-
-      - name: Configure Git Safe Directory
-        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
-
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          fetch-depth: ${{ github.event_name == 'pull_request' && 0 || 1 }}
 
       - name: Execute Scan Stage
         id: run-scan
@@ -190,6 +190,15 @@ jobs:
       GCP_SA_KEY: ${{ secrets.gcp_sa_key }}
 
     steps:
+      - name: Configure Git Safe Directory
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.scan.outputs.target_sha || github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+
       - name: Mint GitHub App Token
         id: app-token
         if: env.GH_APP_ID != '' && env.GH_APP_KEY != ''
@@ -205,15 +214,6 @@ jobs:
           workload_identity_provider: ${{ secrets.gcp_workload_identity_provider }}
           service_account: ${{ secrets.gcp_service_account }}
           credentials_json: ${{ secrets.gcp_sa_key }}
-
-      - name: Configure Git Safe Directory
-        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
-
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.scan.outputs.target_sha || github.event.pull_request.head.sha || github.sha }}
-          fetch-depth: 1
 
       - name: Download Base State Artifact
         uses: actions/download-artifact@v4
@@ -265,6 +265,15 @@ jobs:
       GCP_SA_KEY: ${{ secrets.gcp_sa_key }}
 
     steps:
+      - name: Configure Git Safe Directory
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.scan.outputs.target_sha || github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+
       - name: Mint GitHub App Token
         id: app-token
         if: env.GH_APP_ID != '' && env.GH_APP_KEY != ''
@@ -280,15 +289,6 @@ jobs:
           workload_identity_provider: ${{ secrets.gcp_workload_identity_provider }}
           service_account: ${{ secrets.gcp_service_account }}
           credentials_json: ${{ secrets.gcp_sa_key }}
-
-      - name: Configure Git Safe Directory
-        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
-
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.scan.outputs.target_sha || github.event.pull_request.head.sha || github.sha }}
-          fetch-depth: 1
 
       - name: Download Base State Artifact
         uses: actions/download-artifact@v4
