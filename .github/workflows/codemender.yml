@@ -21,6 +21,11 @@ on:
         required: false
         default: 'npm install --prefer-offline && npm test'
         type: string
+      skip_exploit_verification:
+        description: 'Skip dynamic exploit verification (cm verify --skip-exploit-verification)'
+        required: false
+        default: true
+        type: boolean
       fix_model:
         description: 'Dedicated model override for Stage 2 patch synthesis (cm fix)'
         required: false
@@ -45,6 +50,12 @@ jobs:
       (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'codemender-scan'))
     # uses: ilbzzz/codemender-agent/.github/workflows/codemender_parallel.yml@development
     uses: ./.github/workflows/codemender_parallel.yml
+    
+    # Environment variables passed to CodeMender stages
+    env:
+      # Optional: set to 'true' to skip dynamic exploit verification in Stage 2
+      CODEMENDER_SKIP_EXPLOIT_VERIFICATION: ${{ inputs.skip_exploit_verification || 'true' }}
+
     with:
       scan_target: ${{ inputs.scan_target || '.' }}
       # Passes the input from workflow_dispatch, or falls back to 'npm install && npm test' on schedule/push
