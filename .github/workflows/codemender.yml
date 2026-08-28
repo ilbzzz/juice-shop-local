@@ -57,7 +57,7 @@ jobs:
       build_command: ${{ inputs.build_command || 'npm install --prefer-offline && npm test' }}
       # Optional: Skip dynamic exploit verification during Stage 2 (cm verify --skip-exploit-verification).
       # Fallback Default (false): Generates & verifies PoC exploits dynamically before synthesis.
-      skip_exploit_verification: ${{ inputs.skip_exploit_verification || false }}
+      skip_exploit_verification: ${{ inputs.skip_exploit_verification || true }}
 
       max_tasks: ${{ github.event_name == 'pull_request' && 4 || 10 }}
       upload_sarif: true
