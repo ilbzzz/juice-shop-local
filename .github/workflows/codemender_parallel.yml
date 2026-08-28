@@ -91,6 +91,12 @@ permissions:
   actions: read
   packages: read
 
+env:
+  GH_APP_ID: ${{ secrets.github_app_id }}
+  GH_APP_KEY: ${{ secrets.github_app_private_key }}
+  WIF_PROVIDER: ${{ secrets.gcp_workload_identity_provider }}
+  GCP_SA_KEY: ${{ secrets.gcp_sa_key }}
+
 jobs:
   scan:
     name: Stage 1 - Scan & Partition
@@ -98,6 +104,11 @@ jobs:
     timeout-minutes: 55
     container:
       image: ${{ inputs.runner_image }}
+    env:
+      GH_APP_ID: ${{ secrets.github_app_id }}
+      GH_APP_KEY: ${{ secrets.github_app_private_key }}
+      WIF_PROVIDER: ${{ secrets.gcp_workload_identity_provider }}
+      GCP_SA_KEY: ${{ secrets.gcp_sa_key }}
     outputs:
       matrix: ${{ steps.run-scan.outputs.matrix }}
       findings_count: ${{ steps.run-scan.outputs.findings_count }}
@@ -107,20 +118,14 @@ jobs:
     steps:
       - name: Mint GitHub App Token
         id: app-token
-        env:
-          APP_ID: ${{ secrets.github_app_id }}
-          APP_KEY: ${{ secrets.github_app_private_key }}
-        if: env.APP_ID != '' && env.APP_KEY != ''
+        if: env.GH_APP_ID != '' && env.GH_APP_KEY != ''
         uses: actions/create-github-app-token@v1
         with:
           app-id: ${{ secrets.github_app_id }}
           private-key: ${{ secrets.github_app_private_key }}
 
       - name: Authenticate to Google Cloud
-        env:
-          WIF_PROVIDER: ${{ secrets.gcp_workload_identity_provider }}
-          SA_KEY: ${{ secrets.gcp_sa_key }}
-        if: env.WIF_PROVIDER != '' || env.SA_KEY != ''
+        if: env.WIF_PROVIDER != '' || env.GCP_SA_KEY != ''
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.gcp_workload_identity_provider }}
@@ -178,24 +183,23 @@ jobs:
     timeout-minutes: 55
     container:
       image: ${{ inputs.runner_image }}
+    env:
+      GH_APP_ID: ${{ secrets.github_app_id }}
+      GH_APP_KEY: ${{ secrets.github_app_private_key }}
+      WIF_PROVIDER: ${{ secrets.gcp_workload_identity_provider }}
+      GCP_SA_KEY: ${{ secrets.gcp_sa_key }}
 
     steps:
       - name: Mint GitHub App Token
         id: app-token
-        env:
-          APP_ID: ${{ secrets.github_app_id }}
-          APP_KEY: ${{ secrets.github_app_private_key }}
-        if: env.APP_ID != '' && env.APP_KEY != ''
+        if: env.GH_APP_ID != '' && env.GH_APP_KEY != ''
         uses: actions/create-github-app-token@v1
         with:
           app-id: ${{ secrets.github_app_id }}
           private-key: ${{ secrets.github_app_private_key }}
 
       - name: Authenticate to Google Cloud
-        env:
-          WIF_PROVIDER: ${{ secrets.gcp_workload_identity_provider }}
-          SA_KEY: ${{ secrets.gcp_sa_key }}
-        if: env.WIF_PROVIDER != '' || env.SA_KEY != ''
+        if: env.WIF_PROVIDER != '' || env.GCP_SA_KEY != ''
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.gcp_workload_identity_provider }}
@@ -254,24 +258,23 @@ jobs:
     timeout-minutes: 30
     container:
       image: ${{ inputs.runner_image }}
+    env:
+      GH_APP_ID: ${{ secrets.github_app_id }}
+      GH_APP_KEY: ${{ secrets.github_app_private_key }}
+      WIF_PROVIDER: ${{ secrets.gcp_workload_identity_provider }}
+      GCP_SA_KEY: ${{ secrets.gcp_sa_key }}
 
     steps:
       - name: Mint GitHub App Token
         id: app-token
-        env:
-          APP_ID: ${{ secrets.github_app_id }}
-          APP_KEY: ${{ secrets.github_app_private_key }}
-        if: env.APP_ID != '' && env.APP_KEY != ''
+        if: env.GH_APP_ID != '' && env.GH_APP_KEY != ''
         uses: actions/create-github-app-token@v1
         with:
           app-id: ${{ secrets.github_app_id }}
           private-key: ${{ secrets.github_app_private_key }}
 
       - name: Authenticate to Google Cloud
-        env:
-          WIF_PROVIDER: ${{ secrets.gcp_workload_identity_provider }}
-          SA_KEY: ${{ secrets.gcp_sa_key }}
-        if: env.WIF_PROVIDER != '' || env.SA_KEY != ''
+        if: env.WIF_PROVIDER != '' || env.GCP_SA_KEY != ''
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.gcp_workload_identity_provider }}
