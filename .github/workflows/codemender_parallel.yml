@@ -6,7 +6,7 @@ on:
       runner_image:
         description: 'Universal runner image or custom Bring-Your-Own-Image (BYOI)'
         required: false
-        default: 'ghcr.io/google/codemender-runner:latest'
+        default: 'ghcr.io/ilbzzz/codemender-runner:latest'
         type: string
       runner_type:
         description: 'Runner label for job execution'
@@ -43,6 +43,26 @@ on:
         required: false
         default: true
         type: boolean
+      model:
+        description: 'Default Gemini model across all stages'
+        required: false
+        default: ''
+        type: string
+      find_model:
+        description: 'Dedicated model for Stage 1 vulnerability discovery (cm find)'
+        required: false
+        default: ''
+        type: string
+      verify_model:
+        description: 'Dedicated model for Stage 2 exploit verification (cm verify)'
+        required: false
+        default: ''
+        type: string
+      fix_model:
+        description: 'Dedicated model for Stage 2 patch synthesis (cm fix)'
+        required: false
+        default: ''
+        type: string
     secrets:
       gcp_workload_identity_provider:
         description: 'GCP Workload Identity Provider resource name'
@@ -86,14 +106,20 @@ jobs:
     steps:
       - name: Mint GitHub App Token
         id: app-token
-        if: ${{ secrets.github_app_id != '' && secrets.github_app_private_key != '' }}
+        env:
+          APP_ID: ${{ secrets.github_app_id }}
+          APP_KEY: ${{ secrets.github_app_private_key }}
+        if: env.APP_ID != '' && env.APP_KEY != ''
         uses: actions/create-github-app-token@v1
         with:
           app-id: ${{ secrets.github_app_id }}
           private-key: ${{ secrets.github_app_private_key }}
 
       - name: Authenticate to Google Cloud
-        if: ${{ secrets.gcp_workload_identity_provider != '' || secrets.gcp_sa_key != '' }}
+        env:
+          WIF_PROVIDER: ${{ secrets.gcp_workload_identity_provider }}
+          SA_KEY: ${{ secrets.gcp_sa_key }}
+        if: env.WIF_PROVIDER != '' || env.SA_KEY != ''
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.gcp_workload_identity_provider }}
@@ -122,6 +148,8 @@ jobs:
           CODEMENDER_SCAN_TARGET: ${{ inputs.scan_target }}
           CODEMENDER_BUILD_COMMAND: ${{ inputs.build_command }}
           CODEMENDER_MAX_TASKS: ${{ inputs.max_tasks }}
+          CODEMENDER_MODEL: ${{ inputs.model }}
+          CODEMENDER_FIND_MODEL: ${{ inputs.find_model }}
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token || secrets.github_token || secrets.GITHUB_TOKEN || github.token }}
           GITHUB_REPO_URL: ${{ github.server_url }}/${{ github.repository }}.git
           WORKSPACE_DIR: ${{ github.workspace }}
@@ -153,14 +181,20 @@ jobs:
     steps:
       - name: Mint GitHub App Token
         id: app-token
-        if: ${{ secrets.github_app_id != '' && secrets.github_app_private_key != '' }}
+        env:
+          APP_ID: ${{ secrets.github_app_id }}
+          APP_KEY: ${{ secrets.github_app_private_key }}
+        if: env.APP_ID != '' && env.APP_KEY != ''
         uses: actions/create-github-app-token@v1
         with:
           app-id: ${{ secrets.github_app_id }}
           private-key: ${{ secrets.github_app_private_key }}
 
       - name: Authenticate to Google Cloud
-        if: ${{ secrets.gcp_workload_identity_provider != '' || secrets.gcp_sa_key != '' }}
+        env:
+          WIF_PROVIDER: ${{ secrets.gcp_workload_identity_provider }}
+          SA_KEY: ${{ secrets.gcp_sa_key }}
+        if: env.WIF_PROVIDER != '' || env.SA_KEY != ''
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.gcp_workload_identity_provider }}
@@ -194,6 +228,9 @@ jobs:
           CODEMENDER_PR_NUMBER: ${{ github.event.pull_request.number || '' }}
           CODEMENDER_IS_FORK_PR: ${{ github.event.pull_request && github.event.pull_request.head.repo.full_name != github.repository || false }}
           CODEMENDER_BUILD_COMMAND: ${{ inputs.build_command }}
+          CODEMENDER_MODEL: ${{ inputs.model }}
+          CODEMENDER_VERIFY_MODEL: ${{ inputs.verify_model }}
+          CODEMENDER_FIX_MODEL: ${{ inputs.fix_model }}
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token || secrets.github_token || secrets.GITHUB_TOKEN || github.token }}
           GITHUB_REPO_URL: ${{ github.server_url }}/${{ github.repository }}.git
           WORKSPACE_DIR: ${{ github.workspace }}
@@ -220,14 +257,20 @@ jobs:
     steps:
       - name: Mint GitHub App Token
         id: app-token
-        if: ${{ secrets.github_app_id != '' && secrets.github_app_private_key != '' }}
+        env:
+          APP_ID: ${{ secrets.github_app_id }}
+          APP_KEY: ${{ secrets.github_app_private_key }}
+        if: env.APP_ID != '' && env.APP_KEY != ''
         uses: actions/create-github-app-token@v1
         with:
           app-id: ${{ secrets.github_app_id }}
           private-key: ${{ secrets.github_app_private_key }}
 
       - name: Authenticate to Google Cloud
-        if: ${{ secrets.gcp_workload_identity_provider != '' || secrets.gcp_sa_key != '' }}
+        env:
+          WIF_PROVIDER: ${{ secrets.gcp_workload_identity_provider }}
+          SA_KEY: ${{ secrets.gcp_sa_key }}
+        if: env.WIF_PROVIDER != '' || env.SA_KEY != ''
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.gcp_workload_identity_provider }}
