@@ -1,0 +1,36 @@
+name: CodeMender Security Remediation
+
+on:
+  schedule:
+    - cron: '0 2 * * 0' # Run at 2:00 AM UTC, only on Sunday
+  pull_request:
+    types: [opened, synchronize, labeled]
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      scan_target:
+        description: 'Subdirectory path to scan'
+        required: false
+        default: '.'
+      max_tasks:
+        description: 'Maximum parallel worker tasks'
+        required: false
+        default: '10'
+
+jobs:
+  remediate:
+    # Only run on Schedule, Manual Trigger, or PRs with 'security-scan' label
+    if: >
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'security-scan'))
+    uses: your-org/codemender-workflows/.github/workflows/codemender_parallel.yml@v1
+    with:
+      scan_target: ${{ inputs.scan_target || '.' }}
+      max_tasks: ${{ github.event_name == 'pull_request' && 4 || 10 }}
+      upload_sarif: true
+    secrets:
+      gcp_workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      gcp_service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      github_app_id: ${{ secrets.GH_APP_ID }}
+      github_app_private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
