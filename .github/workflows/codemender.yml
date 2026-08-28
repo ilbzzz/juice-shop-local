@@ -16,6 +16,11 @@ on:
         description: 'Maximum parallel worker tasks'
         required: false
         default: '10'
+      build_command:
+        description: 'Custom build & test command for verification'
+        required: false
+        default: 'npm install && npm test'
+        type: string
 
 jobs:
   remediate:
@@ -24,7 +29,7 @@ jobs:
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'security-scan'))
-    uses: your-org/codemender-workflows/.github/workflows/codemender_parallel.yml@v1
+    uses: ilbzzz/codemender-agent/.github/workflows/codemender_parallel.yml@main
     with:
       scan_target: ${{ inputs.scan_target || '.' }}
       max_tasks: ${{ github.event_name == 'pull_request' && 4 || 10 }}
