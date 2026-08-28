@@ -4,7 +4,7 @@ on:
   schedule:
     - cron: '0 2 * * 0' # Run at 2:00 AM UTC, only on Sunday
   pull_request:
-    types: [opened, synchronize, labeled]
+    types: [labeled]      # Only triggers on labeling (avoids 1s skipped run noise on PR open/push)
     branches: [main, master]
   workflow_dispatch:
     inputs:
