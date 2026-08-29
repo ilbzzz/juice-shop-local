@@ -18,6 +18,17 @@ export function profileImageUrlUpload () {
     if (req.body.imageUrl !== undefined) {
       const url = req.body.imageUrl
       if (url.match(/(.)*solve\/challenges\/server-side(.)*/) !== null) req.app.locals.abused_ssrf_bug = true
+
+      try {
+        const parsedUrl = new URL(url)
+        const hostname = parsedUrl.hostname.toLowerCase()
+        if (['localhost', '127.0.0.1', '::1', '0.0.0.0'].includes(hostname) || hostname.startsWith('169.254.') || hostname.startsWith('10.') || hostname.startsWith('192.168.') || /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname) || (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:')) {
+          res.location(process.env.BASE_PATH + '/profile')
+          res.redirect(process.env.BASE_PATH + '/profile')
+          return
+        }
+      } catch (e) {}
+
       const loggedInUser = security.authenticatedUsers.get(req.cookies.token)
       if (loggedInUser) {
         try {
