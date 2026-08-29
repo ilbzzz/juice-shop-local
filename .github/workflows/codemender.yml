@@ -2,7 +2,7 @@ name: CodeMender Security Remediation
 
 on:
   schedule:
-    - cron: '0 2 * * 0' # Run at 2:00 AM UTC, only on Sunday
+    - cron: '0 2 1 * *' # Runs at 02:00, on day 1 of the month
   pull_request:
     types: [labeled]      # Only triggers on labeling (avoids 1s skipped run noise on PR open/push)
     branches: [main, master]
