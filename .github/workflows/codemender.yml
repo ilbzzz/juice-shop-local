@@ -1,0 +1,80 @@
+name: CodeMender Security Remediation
+
+on:
+  schedule:
+    - cron: '0 2 1 * *' # Runs at 02:00, on day 1 of the month
+  pull_request:
+    types: [labeled]      # Only triggers on labeling (avoids 1s skipped run noise on PR open/push)
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      scan_target:
+        description: 'Subdirectory path to scan'
+        required: false
+        default: '.'
+      max_tasks:
+        description: 'Maximum parallel worker tasks'
+        required: false
+        default: '10'
+      build_command:
+        description: 'Custom build & test command for verification'
+        required: false
+        default: 'npm install --prefer-offline && npm test'
+        type: string
+      skip_exploit_verification:
+        description: 'Skip dynamic exploit verification (cm verify --skip-exploit-verification)'
+        required: false
+        default: true
+        type: boolean
+      fix_model:
+        description: 'Dedicated model override for Stage 2 patch synthesis (cm fix)'
+        required: false
+        default: 'gemini-3.6-flash'
+        type: string
+
+# Grant permissions required by the 3-stage pipeline
+permissions:
+  id-token: write
+  contents: write
+  pull-requests: write
+  security-events: write
+  actions: read
+  packages: read
+
+jobs:
+  remediate:
+    # Only run on Schedule, Manual Trigger, or PRs with 'security-scan' label
+    if: >
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'codemender-scan'))
+    # uses: ilbzzz/codemender-agent/.github/workflows/codemender_parallel.yml@development
+    uses: ./.github/workflows/codemender_parallel.yml
+
+    with:
+      scan_target: ${{ inputs.scan_target || '.' }}
+      # Passes the input from workflow_dispatch, or falls back to 'npm install && npm test' on schedule/push
+      build_command: ${{ inputs.build_command || 'npm install --prefer-offline && npm test' }}
+      # Optional: Skip dynamic exploit verification during Stage 2 (cm verify --skip-exploit-verification).
+      # Fallback Default (false): Generates & verifies PoC exploits dynamically before synthesis.
+      skip_exploit_verification: ${{ inputs.skip_exploit_verification || true }}
+
+      max_tasks: ${{ github.event_name == 'pull_request' && 4 || 10 }}
+      upload_sarif: true
+      # =======================================================================
+      # 6. AI MODEL CONFIGURATION (OPTIONAL)
+      # =======================================================================
+      # Fallback Defaults: During automated PR and Nightly scans, inputs.* is null.
+      # If you want a specific model used on PR scans, specify it as the fallback value after '||'.
+      # Leave empty ('') to use CodeMender's up-to-date default Gemini models.
+      # Consult documentation for latest supported models:
+      # https://docs.cloud.google.com/gemini-enterprise-agent-platform/codemender#specifying-the-model
+      # model: ${{ inputs.model || '' }}               # Global model override across all stages
+      # find_model: ${{ inputs.find_model || '' }}     # Dedicated model for Stage 1 discovery (cm find)
+      # verify_model: ${{ inputs.verify_model || '' }} # Dedicated model for Stage 2 exploit verification (cm verify)
+      fix_model: ${{ inputs.fix_model || 'gemini-3.6-flash' }}       # Dedicated model for Stage 2 patch synthesis (cm fix, e.g. 'gemini-2.5-flash')
+    secrets:
+      gcp_workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      gcp_service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      github_app_id: ${{ secrets.GH_APP_ID }}
+      github_app_private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
