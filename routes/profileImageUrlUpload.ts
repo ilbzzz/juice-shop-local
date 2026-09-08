@@ -4,6 +4,8 @@
  */
 
 import fs from 'node:fs'
+import net from 'node:net'
+import dns from 'node:dns'
 import { Readable } from 'node:stream'
 import { finished } from 'node:stream/promises'
 import { type Request, type Response, type NextFunction } from 'express'
@@ -13,6 +15,81 @@ import { UserModel } from '../models/user'
 import * as utils from '../lib/utils'
 import logger from '../lib/logger'
 
+function isPrivateIp (ip: string): boolean {
+  if (net.isIPv4(ip)) {
+    const parts = ip.split('.').map(Number)
+    if (parts.length !== 4 || parts.some(isNaN)) return true
+    const [a, b, c, d] = parts
+    if (a === 0) return true
+    if (a === 10) return true
+    if (a === 100 && b >= 64 && b <= 127) return true
+    if (a === 127) return true
+    if (a === 169 && b === 254) return true
+    if (a === 172 && b >= 16 && b <= 31) return true
+    if (a === 192 && b === 0 && c === 0) return true
+    if (a === 192 && b === 0 && c === 2) return true
+    if (a === 192 && b === 88 && c === 99) return true
+    if (a === 192 && b === 168) return true
+    if (a === 198 && (b === 18 || b === 19)) return true
+    if (a === 198 && b === 51 && c === 100) return true
+    if (a === 203 && b === 0 && c === 113) return true
+    if (a >= 224) return true
+    return false
+  }
+
+  if (net.isIPv6(ip)) {
+    const normalized = ip.toLowerCase()
+    if (normalized === '::1' || normalized === '::' || normalized === '0:0:0:0:0:0:0:1' || normalized === '0:0:0:0:0:0:0:0') {
+      return true
+    }
+    const lastColon = normalized.lastIndexOf(':')
+    if (lastColon !== -1) {
+      const v4Part = normalized.slice(lastColon + 1)
+      if (net.isIPv4(v4Part)) {
+        return isPrivateIp(v4Part)
+      }
+    }
+    if (/^(fc|fd)/i.test(normalized)) return true
+    if (/^fe[89ab]/i.test(normalized)) return true
+    if (normalized.startsWith('ff')) return true
+    return false
+  }
+
+  return true
+}
+
+async function isSafeUrl (urlString: string): Promise<boolean> {
+  try {
+    const parsedUrl = new URL(urlString)
+    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+      return false
+    }
+    const rawHostname = parsedUrl.hostname.toLowerCase()
+    const hostname = rawHostname.replace(/^\[|\]$/g, '')
+
+    if (hostname === 'localhost' || hostname.endsWith('.localhost') || hostname.endsWith('.local') || hostname.endsWith('.internal') || hostname.endsWith('.lan')) {
+      return false
+    }
+
+    if (net.isIP(hostname)) {
+      return !isPrivateIp(hostname)
+    }
+
+    const addresses = await dns.promises.lookup(hostname, { all: true })
+    if (!addresses || addresses.length === 0) {
+      return false
+    }
+    for (const addr of addresses) {
+      if (isPrivateIp(addr.address)) {
+        return false
+      }
+    }
+    return true
+  } catch {
+    return false
+  }
+}
+
 export function profileImageUrlUpload () {
   return async (req: Request, res: Response, next: NextFunction) => {
     if (req.body.imageUrl !== undefined) {
@@ -21,6 +98,9 @@ export function profileImageUrlUpload () {
       const loggedInUser = security.authenticatedUsers.get(req.cookies.token)
       if (loggedInUser) {
         try {
+          if (!(await isSafeUrl(url))) {
+            throw new Error('Unsafe or invalid image URL')
+          }
           const response = await fetch(url)
           if (!response.ok || !response.body) {
             throw new Error('url returned a non-OK status code or an empty body')
