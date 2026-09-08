@@ -24,7 +24,7 @@ export function saveLoginIp () {
       } else {
         lastLoginIp = security.sanitizeSecure(lastLoginIp ?? '')
       }
-      if (lastLoginIp === undefined) {
+      if (!lastLoginIp) {
         lastLoginIp = utils.toSimpleIpAddress(req.socket.remoteAddress ?? '')
       }
       try {
