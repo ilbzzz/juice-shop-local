@@ -14,6 +14,37 @@ import config from 'config'
 
 export function updateUserProfile () {
   return async (req: Request, res: Response, next: NextFunction) => {
+    const origin = req.headers.origin
+    const referer = req.headers.referer
+    const host = req.headers.host
+
+    if (req.headers['sec-fetch-site'] === 'cross-site') {
+      next(new Error('Blocked illegal activity by ' + req.socket.remoteAddress))
+      return
+    }
+
+    if (origin) {
+      try {
+        if (new URL(origin).host !== host) {
+          next(new Error('Blocked illegal activity by ' + req.socket.remoteAddress))
+          return
+        }
+      } catch {
+        next(new Error('Blocked illegal activity by ' + req.socket.remoteAddress))
+        return
+      }
+    } else if (referer) {
+      try {
+        if (new URL(referer).host !== host) {
+          next(new Error('Blocked illegal activity by ' + req.socket.remoteAddress))
+          return
+        }
+      } catch {
+        next(new Error('Blocked illegal activity by ' + req.socket.remoteAddress))
+        return
+      }
+    }
+
     const loggedInUser = security.authenticatedUsers.get(req.cookies.token)
 
     if (!loggedInUser) {
