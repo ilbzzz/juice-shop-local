@@ -38,8 +38,10 @@ interface IAuthenticatedUsers {
   updateFrom: (req: Request, user: ResponseWithUser) => any
 }
 
+const defaultHmacKey = crypto.randomBytes(32).toString('hex')
+
 export const hash = (data: string) => crypto.createHash('md5').update(data).digest('hex')
-export const hmac = (data: string) => crypto.createHmac('sha256', 'pa4qacea4VK9t9nGv7yZtwmj').update(data).digest('hex')
+export const hmac = (data: string) => crypto.createHmac('sha256', process.env.SECURITY_ANSWER_HMAC_KEY || process.env.HMAC_KEY || defaultHmacKey).update(data).digest('hex')
 
 export const cutOffPoisonNullByte = (str: string) => {
   const nullByte = '%00'

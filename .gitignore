@@ -49,6 +49,9 @@ assets/
 !frontend/src/assets/
 
 # Custom configuration files
+.env
+.env.*
+!.env.example
 config/*.yml
 !config/addo.yml
 !config/bodgeit.yml
