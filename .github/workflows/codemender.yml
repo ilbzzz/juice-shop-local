@@ -32,6 +32,11 @@ on:
         required: false
         default: 'gemini-3.6-flash'
         type: string
+      find_triage:
+        description: 'Run Stage 1 discovery in AST-based deep scan triage mode (cm find --triage). Requires a Deep Find capable runner image.'
+        required: false
+        default: false
+        type: boolean
 
 # Grant permissions required by the 3-stage pipeline
 permissions:
@@ -78,6 +83,12 @@ jobs:
       # find_model: ${{ inputs.find_model || '' }}     # Dedicated model for Stage 1 discovery (cm find)
       # verify_model: ${{ inputs.verify_model || '' }} # Dedicated model for Stage 2 exploit verification (cm verify)
       fix_model: ${{ inputs.fix_model || 'gemini-3.6-flash' }}       # Dedicated model for Stage 2 patch synthesis (cm fix, e.g. 'gemini-2.5-flash')
+      # Optional: Run Stage 1 discovery in AST-based deep scan triage mode (cm find --triage).
+      # ⚠️ Fallback Default (false): Runs the standard Stage 1 discovery scan.
+      # ⚠️ Requires a runner image whose 'cm' binary supports Deep Find.
+      # Note: When enabled, zero-finding scan retries are reduced from 3 to 1.
+      find_triage: ${{ inputs.find_triage || true }}
+
     secrets:
       gcp_workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
       gcp_service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
