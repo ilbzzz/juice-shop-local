@@ -68,6 +68,16 @@ on:
         required: false
         default: false
         type: boolean
+      find_triage:
+        description: 'Run Stage 1 discovery as an AST triage deep scan (cm find --triage). Requires a CodeMender CLI build that supports the flag.'
+        required: false
+        default: false
+        type: boolean
+      find_concurrency:
+        description: 'Cap parallel verification workers during the AST triage sweep (cm find --concurrency=N). Ignored unless find_triage is true.'
+        required: false
+        default: ''
+        type: string
       sandbox_enabled:
         description: 'Enable cm sandbox isolation with container capabilities'
         required: false
@@ -185,6 +195,8 @@ jobs:
           CODEMENDER_MAX_TASKS: ${{ inputs.max_tasks }}
           CODEMENDER_MODEL: ${{ inputs.model }}
           CODEMENDER_FIND_MODEL: ${{ inputs.find_model }}
+          CODEMENDER_FIND_TRIAGE: ${{ inputs.find_triage }}
+          CODEMENDER_FIND_CONCURRENCY: ${{ inputs.find_concurrency }}
           CODEMENDER_SANDBOX_ENABLED: ${{ inputs.sandbox_enabled }}
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token || secrets.custom_github_token || secrets.GITHUB_TOKEN || github.token }}
           GITHUB_REPO_URL: ${{ github.server_url }}/${{ github.repository }}.git
