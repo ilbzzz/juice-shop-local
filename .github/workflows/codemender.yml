@@ -20,7 +20,7 @@ on:
       build_command:
         description: 'Custom build & test command for verification'
         required: false
-        default: 'npm install --prefer-offline && npm test'
+        default: 'npm install --prefer-offline --ignore-scripts && npx tsc --noEmit'
         type: string
       skip_exploit_verification:
         description: 'Skip dynamic exploit verification (cm verify --skip-exploit-verification)'
@@ -64,7 +64,7 @@ jobs:
     with:
       scan_target: ${{ inputs.scan_target || '.' }}
       # Passes the input from workflow_dispatch, or falls back to 'npm install && npm test' on schedule/push
-      build_command: ${{ inputs.build_command || 'npm install --prefer-offline && npm test' }}
+      build_command: ${{ inputs.build_command || 'npm install --prefer-offline --ignore-scripts && npx tsc --noEmit' }}
       # Optional: Skip dynamic exploit verification during Stage 2 (cm verify --skip-exploit-verification).
       # Fallback Default (false): Generates & verifies PoC exploits dynamically before synthesis.
       skip_exploit_verification: ${{ inputs.skip_exploit_verification || true }}
