@@ -1,0 +1,150 @@
+name: CodeMender Scan-Only Export
+
+# Read-only full-repository scan: runs 'cm init --verify' + 'cm find' and
+# publishes report.sarif / report.json / report.html as a workflow artifact.
+# No verify, fix, PRs, commit statuses, comments or SARIF upload to GitHub.
+
+on:
+  workflow_call:
+    inputs:
+      runner_image:
+        description: 'Universal runner image or custom Bring-Your-Own-Image (BYOI)'
+        required: false
+        default: 'ghcr.io/ilbzzz/codemender-runner:latest'
+        type: string
+      runner_type:
+        description: 'Runner label for job execution'
+        required: false
+        default: 'ubuntu-latest'
+        type: string
+      scan_target:
+        description: 'Subdirectory path(s) to scan (default: repository root)'
+        required: false
+        default: '.'
+        type: string
+      build_command:
+        description: 'Build/test command validated by cm init --verify (auto-detected when empty)'
+        required: false
+        default: ''
+        type: string
+      report_artifact_retention_days:
+        description: 'Retention period (days) for exported reports'
+        required: false
+        default: 90
+        type: number
+      model:
+        description: 'Default Gemini model'
+        required: false
+        default: ''
+        type: string
+      find_model:
+        description: 'Dedicated model for vulnerability discovery (cm find)'
+        required: false
+        default: ''
+        type: string
+      sandbox_enabled:
+        description: 'Enable cm sandbox isolation with container capabilities'
+        required: false
+        default: true
+        type: boolean
+    secrets:
+      gcp_workload_identity_provider:
+        description: 'GCP Workload Identity Provider resource name'
+        required: false
+      gcp_service_account:
+        description: 'GCP Service Account email'
+        required: false
+      gcp_sa_key:
+        description: 'GCP Service Account JSON private key'
+        required: false
+      github_app_id:
+        description: 'GitHub App ID for installation token generation (read-only clone)'
+        required: false
+      github_app_private_key:
+        description: 'GitHub App private key (PEM format)'
+        required: false
+      custom_github_token:
+        description: 'Optional custom GitHub Personal Access Token (PAT)'
+        required: false
+
+# Least privilege: read repository contents, pull the runner image, WIF auth
+permissions:
+  contents: read
+  packages: read
+  id-token: write
+
+concurrency:
+  group: ${{ github.workflow }}-scan-only-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  GH_APP_ID: ${{ secrets.github_app_id }}
+  GH_APP_KEY: ${{ secrets.github_app_private_key }}
+  WIF_PROVIDER: ${{ secrets.gcp_workload_identity_provider }}
+  GCP_SA_KEY: ${{ secrets.gcp_sa_key }}
+
+jobs:
+  scan_only:
+    name: Scan-Only Export
+    runs-on: ${{ inputs.runner_type }}
+    timeout-minutes: 55
+    container:
+      image: ${{ inputs.runner_image }} # zizmor: ignore[unpinned-images] Reusable workflow input allows callers to supply custom runner images (BYOI) or specific tags
+      options: --privileged
+    env:
+      GH_APP_ID: ${{ secrets.github_app_id }}
+      GH_APP_KEY: ${{ secrets.github_app_private_key }}
+      WIF_PROVIDER: ${{ secrets.gcp_workload_identity_provider }}
+      GCP_SA_KEY: ${{ secrets.gcp_sa_key }}
+    outputs:
+      findings_count: ${{ steps.run-scan-only.outputs.findings_count }}
+      target_sha: ${{ steps.run-scan-only.outputs.target_sha }}
+
+    steps:
+      # The orchestrator clones the repository itself, so no checkout step is needed
+      - name: Mint Read-Only GitHub App Token
+        id: app-token
+        if: env.GH_APP_ID != '' && env.GH_APP_KEY != ''
+        uses: actions/create-github-app-token@21cfef2b496dd8ef5b904c159339626a10ad380e # v1.11.6
+        with:
+          app-id: ${{ secrets.github_app_id }}
+          private-key: ${{ secrets.github_app_private_key }}
+          permission-contents: read
+
+      - name: Authenticate to Google Cloud
+        if: env.WIF_PROVIDER != '' || env.GCP_SA_KEY != ''
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ secrets.gcp_workload_identity_provider }}
+          service_account: ${{ secrets.gcp_service_account }}
+          credentials_json: ${{ secrets.gcp_sa_key }}
+
+      - name: Execute Scan-Only Export
+        id: run-scan-only
+        env:
+          CODEMENDER_RUN_MODE: scan_only
+          CODEMENDER_STORAGE_MODE: github_actions
+          CODEMENDER_SCAN_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}
+          CODEMENDER_TARGET_SHA: ${{ github.sha }}
+          CODEMENDER_SCAN_TARGET: ${{ inputs.scan_target }}
+          CODEMENDER_BUILD_COMMAND: ${{ inputs.build_command }}
+          CODEMENDER_MODEL: ${{ inputs.model }}
+          CODEMENDER_FIND_MODEL: ${{ inputs.find_model }}
+          CODEMENDER_SANDBOX_ENABLED: ${{ inputs.sandbox_enabled }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token || secrets.custom_github_token || secrets.GITHUB_TOKEN || github.token }}
+          GITHUB_REPO_URL: ${{ github.server_url }}/${{ github.repository }}.git
+          WORKSPACE_DIR: ${{ github.workspace }}
+        run: /opt/codemender/venv/bin/python3 /opt/codemender/orchestrator.py
+
+      - name: Upload Exported Reports
+        if: always()
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        with:
+          name: codemender-scan-only-report-run-${{ github.run_id }}
+          path: |
+            report.sarif
+            report.json
+            report.html
+          retention-days: ${{ inputs.report_artifact_retention_days }}
+          overwrite: true
+          if-no-files-found: ignore
