@@ -9,6 +9,14 @@ on:
     # paths-ignore: ['docs/**', '**.md', '.github/**']
   workflow_dispatch:
     inputs:
+      execution_mode:
+        description: 'Execution Mode'
+        required: true
+        default: 'remediate'
+        type: choice
+        options:
+          - remediate
+          - scan_only
       scan_target:
         description: 'Subdirectory path to scan'
         required: false
@@ -52,7 +60,7 @@ jobs:
     # Only run on Schedule, Manual Trigger, or PRs with 'security-scan' label
     if: >
       github.event_name == 'schedule' ||
-      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_dispatch' && inputs.execution_mode != 'scan_only') ||
       (github.event_name == 'pull_request' && (
         contains(github.event.pull_request.labels.*.name, 'codemender-scan') ||
         ((github.event.action == 'opened' || github.event.action == 'reopened') &&
@@ -89,6 +97,19 @@ jobs:
       # Note: When enabled, zero-finding scan retries are reduced from 3 to 1.
       # find_triage: ${{ inputs.find_triage || true }}
 
+    secrets:
+      gcp_workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      gcp_service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      github_app_id: ${{ secrets.GH_APP_ID }}
+      github_app_private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+
+  scan_only:
+    name: Scan-Only Export
+    if: github.event_name == 'workflow_dispatch' && inputs.execution_mode == 'scan_only'
+    uses: ./.github/workflows/codemender_scan_only.yml
+    with:
+      scan_target: ${{ inputs.scan_target || '.' }}
+      build_command: ${{ inputs.build_command || 'npm install --prefer-offline --ignore-scripts && npx tsc --noEmit' }}
     secrets:
       gcp_workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
       gcp_service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
