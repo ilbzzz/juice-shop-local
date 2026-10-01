@@ -420,6 +420,10 @@ function configureApp (app: ReturnType<typeof express>, seq: typeof sequelize) {
   app.post('/api/Users', verify.registerAdminChallenge())
   app.post('/api/Users', verify.passwordRepeatChallenge()) // vuln-code-snippet hide-end
   app.post('/api/Users', verify.emptyUserRegistration())
+  app.post('/api/Users', (req: Request, res: Response, next: NextFunction) => {
+    req.body.role = security.roles.customer
+    next()
+  })
   /* Unauthorized users are not allowed to access B2B API */
   app.use('/b2b/v2', security.isAuthorized())
   /* Check if the quantity is available in stock and limit per user not exceeded, then add item to basket */
@@ -508,6 +512,10 @@ function configureApp (app: ReturnType<typeof express>, seq: typeof sequelize) {
 
     // create a wallet when a new user is registered using API
     if (name === 'User') { // vuln-code-snippet neutral-line registerAdminChallenge
+      resource.create.write.before((req: Request, res: Response, context: { attributes: any, continue: any }) => {
+        context.attributes.role = security.roles.customer
+        return context.continue
+      })
       resource.create.send.before((req: Request, res: Response, context: { instance: { id: any }, continue: any }) => { // vuln-code-snippet vuln-line registerAdminChallenge
         WalletModel.create({ UserId: context.instance.id }).catch((err: unknown) => {
           console.log(err)
