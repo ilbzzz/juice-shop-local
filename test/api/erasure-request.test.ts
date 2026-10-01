@@ -93,13 +93,13 @@ void describe('/dataerasure', () => {
     const res = await request(app)
       .post('/dataerasure/')
       .set({ Cookie: 'token=' + token })
-      .send({ layout: '../this/file/does/not/exist' })
+      .send({ layout: 'this/file/does/not/exist' })
 
     assert.equal(res.status, 500)
     assert.ok(res.text.includes('no such file or directory'))
   })
 
-  void it('POST erasure request with existing file path as layout parameter returns content truncated', async () => {
+  void it('POST erasure request with path traversal as layout parameter returns error', async () => {
     const { token } = await login(app, { email: 'bjoern.kimminich@gmail.com', password: 'bW9jLmxpYW1nQGhjaW5pbW1pay5ucmVvamI=' })
 
     const res = await request(app)
@@ -107,8 +107,7 @@ void describe('/dataerasure', () => {
       .set({ Cookie: 'token=' + token })
       .send({ layout: '../package.json' })
 
-    assert.equal(res.status, 200)
-    assert.ok(res.text.includes('juice-shop'))
-    assert.ok(res.text.includes('......'))
+    assert.equal(res.status, 500)
+    assert.ok(res.text.includes('File access not allowed'))
   })
 })
