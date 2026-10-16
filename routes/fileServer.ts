@@ -15,7 +15,7 @@ export function servePublicFiles () {
   return ({ params, query }: Request, res: Response, next: NextFunction) => {
     const file = params.file
 
-    if (!file.includes('/')) {
+    if (!file.includes('/') && !file.includes('\\')) {
       verify(file, res, next)
     } else {
       res.status(403)
@@ -24,9 +24,9 @@ export function servePublicFiles () {
   }
 
   function verify (file: string, res: Response, next: NextFunction) {
-    if (file && (endsWithAllowlistedFileType(file) || (file === 'incident-support.kdbx'))) {
-      file = security.cutOffPoisonNullByte(file)
+    file = security.cutOffPoisonNullByte(file)
 
+    if (file && (endsWithAllowlistedFileType(file) || (file === 'incident-support.kdbx'))) {
       challengeUtils.solveIf(challenges.directoryListingChallenge, () => { return file.toLowerCase() === 'acquisitions.md' })
       verifySuccessfulPoisonNullByteExploit(file)
 
