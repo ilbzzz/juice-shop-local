@@ -71,3 +71,8 @@ config/*.yml
 # Misc
 .playwright-mcp/
 cypress/screenshots/
+
+# Environment variables
+.env
+.env.*
+!.env.example
