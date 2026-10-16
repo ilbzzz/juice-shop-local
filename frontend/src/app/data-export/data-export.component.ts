@@ -58,6 +58,15 @@ export class DataExportComponent implements OnInit {
     })
   }
 
+  encodeHtml (str: string): string {
+    return (str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+  }
+
   save () {
     if (this.presenceOfCaptcha) {
       this.dataRequest.answer = this.captchaControl.value
@@ -68,7 +77,7 @@ export class DataExportComponent implements OnInit {
         this.error = null
         this.confirmation = data.confirmation
         this.userData = data.userData
-        window.open('', '_blank', 'width=500')?.document.write(this.userData)
+        window.open('', '_blank', 'width=500')?.document.write('<pre>' + this.encodeHtml(this.userData) + '</pre>')
         this.lastSuccessfulTry = new Date()
         localStorage.setItem('lstdtxprt', JSON.stringify(this.lastSuccessfulTry))
         this.ngOnInit()
